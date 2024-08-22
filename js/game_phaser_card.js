@@ -123,8 +123,14 @@ export class MainScene extends Phaser.Scene {
     handleJoystickInput() {
         const forceX = this.joystick.forceX;
         const forceY = this.joystick.forceY;
-
-        this.hero.body.setVelocity(forceX * this.hero.speed, forceY * this.hero.speed);
+    
+        // Normalize the force values to ensure the speed does not exceed hero.speed
+        const magnitude = Math.sqrt(forceX * forceX + forceY * forceY);
+        const normalizedForceX = (forceX / magnitude) || 0;
+        const normalizedForceY = (forceY / magnitude) || 0;
+    
+        // Apply the normalized force values multiplied by hero.speed
+        this.hero.body.setVelocity(normalizedForceX * this.hero.speed, normalizedForceY * this.hero.speed);
     }
 
     handleWeaponFire(time) {
