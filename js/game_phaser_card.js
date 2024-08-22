@@ -40,7 +40,7 @@ export class MainScene extends Phaser.Scene {
 
         // 가상 조이스틱 설정
         this.joystick = this.plugins.get('rexvirtualjoystickplugin').add(this, {
-            x: this.scale.width + 150,
+            x: this.scale.width - 150,
             y: this.scale.height - 150,
             radius: 50,
             base: this.add.circle(0, 0, 50, 0x888888),
