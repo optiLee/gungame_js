@@ -31,6 +31,9 @@ export class MainScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
+        // 터치 입력 설정
+        this.input.on('pointerdown', this.handleTouchInput, this);
+
         // 적 생성 시 HP 증가를 위한 초기화
         this.enemyHpIncreaseRate = 0;
 
@@ -99,6 +102,14 @@ export class MainScene extends Phaser.Scene {
         } else {
             this.hero.body.setVelocityY(0);
         }
+    }
+
+    handleTouchInput(pointer) {
+        const touchX = pointer.x;
+        const touchY = pointer.y;
+
+        const angle = Phaser.Math.Angle.Between(this.hero.x, this.hero.y, touchX, touchY);
+        this.physics.velocityFromRotation(angle, this.hero.speed, this.hero.body.velocity);
     }
 
     handleWeaponFire(time) {
