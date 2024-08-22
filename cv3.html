@@ -20,7 +20,11 @@
     </style>
 </head>
 <body>
+    <!-- Phaser 라이브러리 -->
     <script src="./js/phaser.min.js"></script>
+    <!-- Virtual Joystick 플러그인 -->
+    <script src="./js/rexvirtualjoystickplugin.min.js"></script>
+    <!-- 게임 스크립트 -->
     <script type="module">
         import { MainScene } from './js/game_phaser_card.js';
 
@@ -35,7 +39,16 @@
                     debug: false
                 }
             },
-            scene: MainScene
+            scene: MainScene,
+            plugins: {
+                global: [
+                    {
+                        key: 'rexVirtualJoystick',
+                        plugin: rexvirtualjoystickplugin,
+                        start: true
+                    }
+                ]
+            }
         };
 
         const game = new Phaser.Game(config);
