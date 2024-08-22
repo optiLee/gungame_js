@@ -1,4 +1,4 @@
-// game_phaser.js
+// game_phaser_card.js
 import { CardEvent } from './card_event.js';
 
 export class MainScene extends Phaser.Scene {
@@ -8,6 +8,12 @@ export class MainScene extends Phaser.Scene {
 
     preload() {
         // 이미지를 로드하지 않습니다.
+
+        this.load.scenePlugin({
+            key: 'rexvirtualjoystickplugin',
+            url: 'rexvirtualjoystickplugin.min.js', // 동일 경로에 있는 파일을 로드
+            sceneKey: 'rexVirtualJoystick'
+        });
     }
 
     create() {
@@ -31,8 +37,17 @@ export class MainScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-        // 터치 입력 설정
-        this.input.on('pointerdown', this.handleTouchInput, this);
+        // 가상 조이스틱 설정
+        this.joystick = this.rexVirtualJoystick.add(this, {
+            x: 100,
+            y: this.scale.height - 100,
+            radius: 50,
+            base: this.add.circle(0, 0, 50, 0x888888),
+            thumb: this.add.circle(0, 0, 25, 0xcccccc),
+            dir: '8dir', // 8방향 조이스틱
+            forceMin: 16,
+            enable: true
+        }).on('update', this.handleJoystickInput, this);
 
         // 적 생성 시 HP 증가를 위한 초기화
         this.enemyHpIncreaseRate = 0;
@@ -104,12 +119,11 @@ export class MainScene extends Phaser.Scene {
         }
     }
 
-    handleTouchInput(pointer) {
-        const touchX = pointer.x;
-        const touchY = pointer.y;
+    handleJoystickInput() {
+        const forceX = this.joystick.forceX;
+        const forceY = this.joystick.forceY;
 
-        const angle = Phaser.Math.Angle.Between(this.hero.x, this.hero.y, touchX, touchY);
-        this.physics.velocityFromRotation(angle, this.hero.speed, this.hero.body.velocity);
+        this.hero.body.setVelocity(forceX * this.hero.speed, forceY * this.hero.speed);
     }
 
     handleWeaponFire(time) {
