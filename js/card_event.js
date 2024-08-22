@@ -2,11 +2,11 @@ export class CardEvent {
     constructor(scene) {
         this.scene = scene;
         this.upgradeCards = [
-            { text: '내가 가진 무기 데미지 100% 강화', effect: 'increaseDamage' },
-            { text: '내가 가진 무기 fireRate 2배', effect: 'increaseFireRate' },
-            { text: 'critical chance 2배', effect: 'increaseCriticalChance' },
-            { text: '내 속도 2배', effect: 'increaseSpeed' },
-            { text: '내 전체무기 속도 2배', effect: 'increaseWeaponSpeed' },
+            { text: '무기 데미지 20% 증가', effect: 'increaseDamage' },
+            { text: '무기 공속 20% 증가', effect: 'increaseFireRate' },
+            { text: '크리확률 20% 증가', effect: 'increaseCriticalChance' },
+            { text: '내 속도 20% 증가', effect: 'increaseSpeed' },
+            { text: '무기 속도 20% 증가', effect: 'increaseWeaponSpeed' },
             { text: '새로운 무기 추가', effect: 'addNewWeapon' }
         ];
         this.selectedCardIndex = 0;
@@ -123,19 +123,19 @@ export class CardEvent {
         // 강화카드 효과 적용
         switch (effect) {
             case 'increaseDamage':
-                this.scene.hero.weapons.forEach(weapon => weapon.damage *= 2);
+                this.scene.hero.weapons.forEach(weapon => weapon.damage *= 1.2);
                 break;
             case 'increaseFireRate':
-                this.scene.hero.weapons.forEach(weapon => weapon.fireRate /= 2);
+                this.scene.hero.weapons.forEach(weapon => weapon.fireRate /= 1.2);
                 break;
             case 'increaseCriticalChance':
-                this.scene.hero.weapons.forEach(weapon => weapon.criticalChance *= 2);
+                this.scene.hero.weapons.forEach(weapon => weapon.criticalChance *= 1.2);
                 break;
             case 'increaseSpeed':
-                this.scene.hero.speed *= 2;
+                this.scene.hero.speed *= 1.2;
                 break;
             case 'increaseWeaponSpeed':
-                this.scene.hero.weapons.forEach(weapon => weapon.weaponSpeed *= 2);
+                this.scene.hero.weapons.forEach(weapon => weapon.weaponSpeed *= 1.2);
                 break;
             case 'addNewWeapon':
                 this.scene.hero.weapons.push({ time: 0, weaponSpeed: 200, damage: 7, criticalRate: 3, criticalChance: 0.3, fireRate: 700, color: 0xff00ff }); // 새로운 무기 추가
