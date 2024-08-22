@@ -1,4 +1,4 @@
-// game_phaser_card.js
+// game_phaser_card.js 파일
 import { CardEvent } from './card_event.js';
 
 export class MainScene extends Phaser.Scene {
@@ -9,11 +9,12 @@ export class MainScene extends Phaser.Scene {
     preload() {
         // 이미지를 로드하지 않습니다.
 
-        this.load.scenePlugin({
-            key: 'rexvirtualjoystickplugin',
-            url: 'rexvirtualjoystickplugin.min.js', // 동일 경로에 있는 파일을 로드
-            sceneKey: 'rexVirtualJoystick'
-        });
+        // rexvirtualjoystickplugin을 Phaser의 플러그인 시스템을 통해 로드합니다.
+        this.load.plugin(
+            'rexvirtualjoystickplugin',
+            './js/rexvirtualjoystickplugin.min.js',
+            true
+        );
     }
 
     create() {
@@ -38,7 +39,7 @@ export class MainScene extends Phaser.Scene {
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         // 가상 조이스틱 설정
-        this.joystick = this.rexVirtualJoystick.add(this, {
+        this.joystick = this.plugins.get('rexvirtualjoystickplugin').add(this, {
             x: 100,
             y: this.scale.height - 100,
             radius: 50,
