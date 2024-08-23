@@ -1,3 +1,5 @@
+// card_event.js 파일
+
 export class CardEvent {
     constructor(scene) {
         this.scene = scene;
@@ -7,7 +9,8 @@ export class CardEvent {
             { text: '크리확률 20% 증가', effect: 'increaseCriticalChance' },
             { text: '내 속도 20% 증가', effect: 'increaseSpeed' },
             { text: '무기 속도 20% 증가', effect: 'increaseWeaponSpeed' },
-            { text: '새로운 무기 추가', effect: 'addNewWeapon' }
+            { text: '새로운 무기 추가', effect: 'addNewWeapon' },
+            { text: '크리배율 20% 증가', effect: 'increaseCriticalRate' }
         ];
         this.selectedCardIndex = 0;
         this.keyboardEnabled = true;
@@ -27,8 +30,7 @@ export class CardEvent {
         this.scene.upgradeCardTexts = [];
 
         this.scene.physics.pause();
-        this.scene.upgradeCardTimer.paused = true;
-        this.scene.enemySpawnTimer.paused = true; // 적 생성 타이머 일시 정지
+        this.scene.isPaused = true; // 게임 일시 중지
 
         // 랜덤하게 세 장의 강화카드를 선택
         const selectedCards = Phaser.Utils.Array.Shuffle(this.upgradeCards).slice(0, 3);
@@ -140,6 +142,9 @@ export class CardEvent {
             case 'addNewWeapon':
                 this.scene.hero.weapons.push({ time: 0, weaponSpeed: 200, damage: 7, criticalRate: 3, criticalChance: 0.3, fireRate: 700, color: 0xff00ff }); // 새로운 무기 추가
                 break;
+            case 'increaseCriticalRate':
+                this.scene.hero.weapons.forEach(weapon => weapon.criticalRate *= 1.2);
+                break;
         }
 
         // UI 제거 및 게임 재개
@@ -147,7 +152,6 @@ export class CardEvent {
             this.scene.upgradeCardTexts.forEach(text => text.destroy());
         }
         this.scene.physics.resume();
-        this.scene.upgradeCardTimer.paused = false;
-        this.scene.enemySpawnTimer.paused = false; // 적 생성 타이머 재개
+        this.scene.isPaused = false;
     }
 }

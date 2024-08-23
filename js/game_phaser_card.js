@@ -1,4 +1,3 @@
-// game_phaser_card.js 파일
 import { CardEvent } from './card_event.js';
 
 export class MainScene extends Phaser.Scene {
@@ -69,37 +68,37 @@ export class MainScene extends Phaser.Scene {
         this.score = 0;
         this.scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#000' });
 
-        // 5초마다 적 생성
-        this.enemySpawnTimer = this.time.addEvent({
-            delay: 5000, // 5000ms = 5초
-            callback: () => {
-                this.createNewEnemy(5);
-            },
-            callbackScope: this,
-            loop: true
-        });
-
-        // 강화카드 선택 이벤트 타이머
-        this.upgradeCardTimer = this.time.addEvent({
-            delay: 8000, // 8000ms = 8초
-            callback: () => {
-                this.cardEvent.triggerUpgradeCardSelection();
-            },
-            callbackScope: this,
-            loop: true
-        });
+        // 경과 시간 초기화
+        this.elapsedTime = 0;
+        this.elapsedTimeText = this.add.text(this.scale.width / 2, 16, '0:00', { fontSize: '32px', fill: '#000' }).setOrigin(0.5, 0);
 
         // 적이 죽을 때 강화카드 선택 확률
         this.enemyDeathUpgradeChance = 0.1; // 10%
 
         // 카드 이벤트 인스턴스 생성
         this.cardEvent = new CardEvent(this);
+
+        // 타이머 초기화
+        this.lastEnemySpawnTime = 0;
+        this.lastUpgradeCardTime = 0;
     }
 
     update(time, delta) {
-        this.handleInput(delta);
-        this.handleWeaponFire(time); // 무기 발사 처리
-        this.moveEnemiesTowardsHero();
+        // 게임이 일시 중지 상태가 아닌 경우에만 업데이트 수행
+        if (!this.isPaused) {
+            this.handleInput(delta);
+            this.handleWeaponFire(time); // 무기 발사 처리
+            this.moveEnemiesTowardsHero();
+
+            // 경과 시간 업데이트
+            this.elapsedTime += delta / 1000;
+            const minutes = Math.floor(this.elapsedTime / 60);
+            const seconds = Math.floor(this.elapsedTime % 60);
+            this.elapsedTimeText.setText(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+
+            this.updateEnemySpawn(this.elapsedTime);
+            this.updateUpgradeCard(this.elapsedTime);
+        }
     }
 
     handleInput(delta) {
@@ -173,9 +172,6 @@ export class MainScene extends Phaser.Scene {
 
         // 적의 체력 감소
         enemy.hp -= finalDamage;
-        //console.log(weapon.damage);
-        //console.log(weapon.criticalRate, finalDamage);
-        //console.log(weapon.color);
 
         // 충돌 이펙트 생성
         this.createCollisionEffect(weapon.x, weapon.y, isCritical, weapon.color);
@@ -184,7 +180,8 @@ export class MainScene extends Phaser.Scene {
         this.showDamageText(weapon.x, weapon.y, finalDamage, isCritical);
 
         // 적의 체력 텍스트 업데이트
-        enemy.hpText.setText(enemy.hp.toString());
+        const roundedHp = Math.round(enemy.hp);
+        enemy.hpText.setText(roundedHp.toString());
 
         // 적의 체력이 0 이하이면 제거
         if (enemy.hp <= 0) {
@@ -227,8 +224,10 @@ export class MainScene extends Phaser.Scene {
     }
 
     showDamageText(x, y, damage, isCritical) {
+        // 데미지를 소수 첫째자리까지 반올림
+        const roundedDamage = Math.round(damage * 10) / 10;
         const ffsize = isCritical ? '18px' : '14px';
-        const damageText = this.add.text(x, y, damage.toString(), { fontSize: ffsize, fill: '#000000' }).setOrigin(0.5);
+        const damageText = this.add.text(x, y, roundedDamage.toString(), { fontSize: ffsize, fill: '#000000' }).setOrigin(0.5);
         this.tweens.add({
             targets: damageText,
             y: y - 20,
@@ -292,9 +291,20 @@ export class MainScene extends Phaser.Scene {
         this.physics.pause();
         hero.setFillStyle(0xff0000); // 충돌 시 영웅 색상 변경
         this.add.text(this.scale.width / 2, this.scale.height / 2, 'Game Over', { fontSize: '64px', fill: '#000' }).setOrigin(0.5);
+        this.isPaused = true; // 게임 일시 중지
+    }
 
-        // 적 생성 타이머 중지
-        this.enemySpawnTimer.remove(false);
-        this.upgradeCardTimer.remove(false);
+    updateEnemySpawn(elapsedTime) {
+        if (elapsedTime > this.lastEnemySpawnTime + 5) { // 5초마다
+            this.createNewEnemy(5);
+            this.lastEnemySpawnTime = elapsedTime;
+        }
+    }
+
+    updateUpgradeCard(elapsedTime) {
+        if (elapsedTime > this.lastUpgradeCardTime + 8) { // 8초마다
+            this.cardEvent.triggerUpgradeCardSelection();
+            this.lastUpgradeCardTime = elapsedTime;
+        }
     }
 }
