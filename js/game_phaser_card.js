@@ -66,11 +66,11 @@ export class MainScene extends Phaser.Scene {
 
         // 점수
         this.score = 0;
-        this.scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#000' });
+        this.scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '15px', fill: '#000' });
 
         // 경과 시간 초기화
         this.elapsedTime = 0;
-        this.elapsedTimeText = this.add.text(this.scale.width / 2, 16, '0:00', { fontSize: '32px', fill: '#000' }).setOrigin(0.5, 0);
+        this.elapsedTimeText = this.add.text(this.scale.width - 150, 16, '0:00', { fontSize: '15px', fill: '#000' }).setOrigin(0.5, 0);
 
         // 적이 죽을 때 강화카드 선택 확률
         this.enemyDeathUpgradeChance = 0.1; // 10%
