@@ -1,4 +1,8 @@
+// MainScene.js
 import { CardEvent } from './card_event.js';
+import { Util } from './util.js';
+import { Hero } from './hero.js';
+import { Enemy } from './enemy.js';
 
 export class MainScene extends Phaser.Scene {
     constructor() {
@@ -6,9 +10,6 @@ export class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        // 이미지를 로드하지 않습니다.
-
-        // rexvirtualjoystickplugin을 Phaser의 플러그인 시스템을 통해 로드합니다.
         this.load.plugin(
             'rexvirtualjoystickplugin',
             './js/rexvirtualjoystickplugin.min.js',
@@ -17,86 +18,72 @@ export class MainScene extends Phaser.Scene {
     }
 
     create() {
-        // 배경
-        this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x87CEEB).setOrigin(0); // 하늘색 배경
+        this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x646464).setOrigin(0);
 
-        // 영웅 생성
-        this.hero = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, 15, 15, 0x0000ff); // 파란색 네모
-        this.physics.add.existing(this.hero);
-        this.hero.body.setCollideWorldBounds(true);
-        this.hero.speed = 200;
-        this.hero.weapons = []; // 무기 리스트 초기화
+        this.cardEvent = new CardEvent(this);
+        this.util = new Util(this);
 
-        // 적 그룹 생성
+        // Create hero
+        this.hero = new Hero(this.scale.width / 2, this.scale.height / 2, 15, 15, 0x0000ff);
+        this.heroGraphics = this.add.rectangle(this.hero.x, this.hero.y, this.hero.width, this.hero.height, this.hero.color);
+        this.physics.add.existing(this.heroGraphics);
+        this.heroGraphics.body.setCollideWorldBounds(true);
+
+        // Create enemy group
         this.enemies = this.physics.add.group();
 
-        // 무기 그룹 생성
+        // Create weapon group
         this.weapons = this.physics.add.group();
 
-        // 키 입력 설정
+        // Key input setup
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-        // 가상 조이스틱 설정
+        // Virtual joystick setup
         this.joystick = this.plugins.get('rexvirtualjoystickplugin').add(this, {
             x: this.scale.width - 150,
             y: this.scale.height - 150,
             radius: 50,
             base: this.add.circle(0, 0, 50, 0x888888),
             thumb: this.add.circle(0, 0, 25, 0xcccccc),
-            dir: '8dir', // 8방향 조이스틱
+            dir: '8dir',
             forceMin: 16,
             enable: true
         }).on('update', this.handleJoystickInput, this);
 
-        // 디바운스 적용 (100ms)
-        this.handleJoystickInput = this.debounce(this.handleJoystickInput.bind(this), 100);
+        this.handleJoystickInput = this.util.debounce(this.handleJoystickInput.bind(this), 100);
+        this.handleJoystickInput = this.util.throttle(this.handleJoystickInput.bind(this), 100);
 
-        // 스로틀링 적용 (100ms)
-        this.handleJoystickInput = this.throttle(this.handleJoystickInput.bind(this), 100);
+        this.enemyHpIncreaseRate = 1;
 
-        // 적 생성 시 HP 증가를 위한 초기화
-        this.enemyHpIncreaseRate = 0;
-
-        // 적 생성
         this.createNewEnemy(5);
 
-        // 테스트용 무기 추가 (색상 포함)
-        this.hero.weapons.push({ time: 0, weaponSpeed: 100, damage: 10, criticalRate: 10, criticalChance: 0.5, fireRate: 1000, color: 0x0000ff }); // 파란색 무기
-        this.hero.weapons.push({ time: 0, weaponSpeed: 300, damage: 5, criticalRate: 2, criticalChance: 0.2, fireRate: 300, color: 0x00ff00 }); // 초록색 무기
+        // Add test weapons to hero
+        this.hero.weapons.push({ time: 0, weaponSpeed: 100, damage: 10, criticalRate: 10, criticalChance: 0.5, fireRate: 1000, color: 0x0000ff });
+        this.hero.weapons.push({ time: 0, weaponSpeed: 300, damage: 5, criticalRate: 2, criticalChance: 0.2, fireRate: 300, color: 0x00ff00 });
 
-        // 충돌 처리
-        this.physics.add.collider(this.hero, this.enemies, this.handleHeroEnemyCollision, null, this);
-        this.physics.add.collider(this.enemies, this.enemies); // 적군 간의 충돌 처리
+        this.physics.add.collider(this.heroGraphics, this.enemies, this.handleHeroEnemyCollision, null, this);
+        this.physics.add.collider(this.enemies, this.enemies);
         this.physics.add.overlap(this.weapons, this.enemies, this.handleWeaponEnemyCollision, null, this);
 
-        // 점수
         this.score = 0;
         this.scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '15px', fill: '#000' });
 
-        // 경과 시간 초기화
         this.elapsedTime = 0;
         this.elapsedTimeText = this.add.text(this.scale.width - 150, 16, '0:00', { fontSize: '15px', fill: '#000' }).setOrigin(0.5, 0);
 
-        // 적이 죽을 때 강화카드 선택 확률
-        this.enemyDeathUpgradeChance = 0.1; // 10%
+        //this.enemyDeathUpgradeChance = 0.1;
 
-        // 카드 이벤트 인스턴스 생성
-        this.cardEvent = new CardEvent(this);
-
-        // 타이머 초기화
         this.lastEnemySpawnTime = 0;
         this.lastUpgradeCardTime = 0;
     }
 
     update(time, delta) {
-        // 게임이 일시 중지 상태가 아닌 경우에만 업데이트 수행
         if (!this.isPaused) {
             this.handleInput(delta);
-            this.handleWeaponFire(time); // 무기 발사 처리
+            this.handleWeaponFire(time);
             this.moveEnemiesTowardsHero();
 
-            // 경과 시간 업데이트
             this.elapsedTime += delta / 1000;
             const minutes = Math.floor(this.elapsedTime / 60);
             const seconds = Math.floor(this.elapsedTime % 60);
@@ -109,137 +96,82 @@ export class MainScene extends Phaser.Scene {
 
     handleInput(delta) {
         if (this.cursors.left.isDown) {
-            this.hero.body.setVelocityX(-this.hero.speed);
+            this.heroGraphics.body.setVelocityX(-this.hero.speed);
         } else if (this.cursors.right.isDown) {
-            this.hero.body.setVelocityX(this.hero.speed);
+            this.heroGraphics.body.setVelocityX(this.hero.speed);
         } else {
-            this.hero.body.setVelocityX(0);
+            this.heroGraphics.body.setVelocityX(0);
         }
 
         if (this.cursors.up.isDown) {
-            this.hero.body.setVelocityY(-this.hero.speed);
+            this.heroGraphics.body.setVelocityY(-this.hero.speed);
         } else if (this.cursors.down.isDown) {
-            this.hero.body.setVelocityY(this.hero.speed);
+            this.heroGraphics.body.setVelocityY(this.hero.speed);
         } else {
-            this.hero.body.setVelocityY(0);
+            this.heroGraphics.body.setVelocityY(0);
         }
-    }
-
-    debounce(func, delay) {
-        let inDebounce;
-        return function() {
-            const context = this;
-            const args = arguments;
-            clearTimeout(inDebounce);
-            inDebounce = setTimeout(() => func.apply(context, args), delay);
-        };
-    }
-
-    throttle(func, limit) {
-        let lastFunc;
-        let lastRan;
-        return function() {
-            const context = this;
-            const args = arguments;
-            if (!lastRan) {
-                func.apply(context, args);
-                lastRan = Date.now();
-            } else {
-                clearTimeout(lastFunc);
-                lastFunc = setTimeout(function() {
-                    if ((Date.now() - lastRan) >= limit) {
-                        func.apply(context, args);
-                        lastRan = Date.now();
-                    }
-                }, limit - (Date.now() - lastRan));
-            }
-        };
     }
 
     handleJoystickInput() {
         const forceX = this.joystick.forceX;
         const forceY = this.joystick.forceY;
 
-        // Normalize the force values to ensure the speed does not exceed hero.speed
         const magnitude = Math.sqrt(forceX * forceX + forceY * forceY);
         const normalizedForceX = (forceX / magnitude) || 0;
         const normalizedForceY = (forceY / magnitude) || 0;
 
-        // Apply the normalized force values multiplied by hero.speed
-        this.hero.body.setVelocity(normalizedForceX * this.hero.speed, normalizedForceY * this.hero.speed);
+        this.heroGraphics.body.setVelocity(normalizedForceX * this.hero.speed, normalizedForceY * this.hero.speed);
     }
 
     handleWeaponFire(time) {
         this.hero.weapons.forEach(weapon => {
             if (time > weapon.time + weapon.fireRate) {
-                const closestEnemy = this.getClosestEnemy();
+                const closestEnemy = this.util.getClosestEnemy(this.enemies, this.heroGraphics);
                 if (closestEnemy) {
-                    const weaponSprite = this.add.circle(this.hero.x, this.hero.y, 8, weapon.color); // 무기 색상 설정
+                    const weaponSprite = this.add.circle(this.heroGraphics.x, this.heroGraphics.y, 3, weapon.color);
                     this.physics.add.existing(weaponSprite);
                     weaponSprite.body.setCollideWorldBounds(true);
                     weaponSprite.damage = weapon.damage;
                     weaponSprite.criticalChance = weapon.criticalChance;
                     weaponSprite.criticalRate = weapon.criticalRate;
-                    weaponSprite.color = weapon.color; // 여기서 color 속성을 추가합니다.
+                    weaponSprite.color = weapon.color;
                     this.weapons.add(weaponSprite);
                     this.physics.moveToObject(weaponSprite, closestEnemy, weapon.weaponSpeed);
-                    weapon.time = time; // 무기 발사 시간 갱신
+                    weapon.time = time;
                 }
             }
         });
     }
 
-    getClosestEnemy() {
-        let closestEnemy = null;
-        let closestDistance = Infinity;
-        this.enemies.children.iterate((enemy) => {
-            const distance = Phaser.Math.Distance.Between(this.hero.x, this.hero.y, enemy.x, enemy.y);
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestEnemy = enemy;
-            }
-        });
-        return closestEnemy;
-    }
-
     handleWeaponEnemyCollision(weapon, enemy) {
-        // 치명타 계산
         const isCritical = Math.random() < weapon.criticalChance;
         const finalDamage = isCritical ? weapon.damage * weapon.criticalRate : weapon.damage;
 
-        // 적의 체력 감소
         enemy.hp -= finalDamage;
 
-        // 충돌 이펙트 생성
         this.createCollisionEffect(weapon.x, weapon.y, isCritical, weapon.color);
 
-        // 데미지 숫자 표시
         this.showDamageText(weapon.x, weapon.y, finalDamage, isCritical);
 
-        // 적의 체력 텍스트 업데이트
         const roundedHp = Math.round(enemy.hp);
         enemy.hpText.setText(roundedHp.toString());
 
-        // 적의 체력이 0 이하이면 제거
         if (enemy.hp <= 0) {
+            if (Math.random() < enemy.dropRate) {
+                this.cardEvent.triggerUpgradeCardSelection();
+            }
+
             enemy.hpText.destroy();
             enemy.destroy();
             this.score += 10;
             this.scoreText.setText(`Score: ${this.score}`);
-
-            // 적 사망 시 강화카드 선택 확률
-            if (Math.random() < this.enemyDeathUpgradeChance) {
-                this.cardEvent.triggerUpgradeCardSelection();
-            }
         }
 
-        // 무기는 충돌 후 제거
         weapon.destroy();
     }
 
     createCollisionEffect(x, y, isCritical, color) {
-        const effectSize = isCritical ? 15 : 10; // 크리티컬일 경우 더 큰 이펙트
-        //console.log(color);
+        const effectSize = isCritical ? 15 : 10;
 
         const effect = this.add.circle(x, y, effectSize, color);
         this.tweens.add({
@@ -254,14 +186,13 @@ export class MainScene extends Phaser.Scene {
 
     moveEnemiesTowardsHero() {
         this.enemies.children.iterate((enemy) => {
-            this.physics.moveToObject(enemy, this.hero, 100); // 적이 영웅을 향해 움직임
-            // 적의 체력 텍스트 위치 업데이트, 약간 아래로 조정
+            //console.log("1: ", enemy.speed);
+            this.physics.moveToObject(enemy, this.heroGraphics, enemy.speed);
             enemy.hpText.setPosition(enemy.x, enemy.y);
         });
     }
 
     showDamageText(x, y, damage, isCritical) {
-        // 데미지를 소수 첫째자리까지 반올림
         const roundedDamage = Math.round(damage * 10) / 10;
         const ffsize = isCritical ? '18px' : '14px';
         const damageText = this.add.text(x, y, roundedDamage.toString(), { fontSize: ffsize, fill: '#000000' }).setOrigin(0.5);
@@ -277,8 +208,8 @@ export class MainScene extends Phaser.Scene {
     }
 
     createNewEnemy(count) {
-        const minDistanceBetweenEnemies = 20; // 적들 간 최소 거리
-        const minDistanceFromHero = 200; // 영웅과의 최소 거리
+        const minDistanceBetweenEnemies = 20;
+        const minDistanceFromHero = 200;
 
         for (let i = 0; i < count; i++) {
             let enemyX, enemyY;
@@ -289,14 +220,12 @@ export class MainScene extends Phaser.Scene {
                 enemyY = Phaser.Math.Between(0, this.scale.height);
                 validPosition = true;
 
-                // 영웅과의 거리 확인
-                const distanceFromHero = Phaser.Math.Distance.Between(enemyX, enemyY, this.hero.x, this.hero.y);
+                const distanceFromHero = Phaser.Math.Distance.Between(enemyX, enemyY, this.heroGraphics.x, this.heroGraphics.y);
                 if (distanceFromHero < minDistanceFromHero) {
                     validPosition = false;
                     continue;
                 }
 
-                // 다른 적들과의 거리 확인
                 this.enemies.children.iterate((enemy) => {
                     const distance = Phaser.Math.Distance.Between(enemyX, enemyY, enemy.x, enemy.y);
                     if (distance < minDistanceBetweenEnemies) {
@@ -305,41 +234,57 @@ export class MainScene extends Phaser.Scene {
                 });
             }
 
-            const enemy = this.add.circle(enemyX, enemyY, 8, 0xff0000); // 빨간색 원
-            this.physics.add.existing(enemy);
+            //const enemyType = Phaser.Math.Between(0, 2) === 0 ? 'small' : (Phaser.Math.Between(0, 1) === 0 ? 'medium' : 'large');
+            const randomValue = Phaser.Math.Between(1, 100); // 1부터 100까지의 무작위 숫자 생성
+            let enemyType;
+            if (randomValue <= 50) {
+                enemyType = 'small'; // 1부터 50까지: 50%
+            } else if (randomValue <= 80) {
+                enemyType = 'medium'; // 51부터 80까지: 30%
+            } else {
+                enemyType = 'large'; // 81부터 100까지: 20%
+            }
+            const enemy = new Enemy(enemyX, enemyY, enemyType);
+            const enemyGraphics = this.add.circle(enemy.x, enemy.y, enemy.size, enemy.color);
+            this.physics.add.existing(enemyGraphics);
 
             // 적의 체력 증가 로직
-            const baseHp = 80;
-            const hpIncrease = this.enemyHpIncreaseRate * 5;
-            enemy.hp = baseHp + hpIncrease;
-            enemy.maxHp = baseHp + hpIncrease;
+            const baseHp = enemy.hp;
+            const hpIncrease = this.enemyHpIncreaseRate * 1.1;
+            enemy.hp = baseHp * hpIncrease;
 
-            // 적의 체력 표시 텍스트 추가, 약간 아래로 조정
-            enemy.hpText = this.add.text(enemyX, enemyY, enemy.hp.toString(), { fontSize: '12px', fill: '#fff' }).setOrigin(0.5);
-
-            this.enemies.add(enemy);
+            enemyGraphics.hp = enemy.hp;
+            enemyGraphics.hpText = this.add.text(enemy.x, enemy.y, Math.round(enemy.hp).toString(), { fontSize: '12px', fill: '#fff' }).setOrigin(0.5);
+            enemyGraphics.dropRate = enemy.dropRate;
+            enemyGraphics.speed = enemy.speed;
+            enemyGraphics.body.mass = enemy.mass;
+            this.enemies.add(enemyGraphics);
         }
 
-        // 적 생성 후 HP 증가율 증가
-        this.enemyHpIncreaseRate++;
+        this.enemyHpIncreaseRate += 0.1;
     }
 
     handleHeroEnemyCollision(hero, enemy) {
         this.physics.pause();
-        hero.setFillStyle(0xff0000); // 충돌 시 영웅 색상 변경
+        hero.setFillStyle(0xff0000);
         this.add.text(this.scale.width / 2, this.scale.height / 2, 'Game Over', { fontSize: '64px', fill: '#000' }).setOrigin(0.5);
-        this.isPaused = true; // 게임 일시 중지
+        this.isPaused = true;
     }
 
     updateEnemySpawn(elapsedTime) {
-        if (elapsedTime > this.lastEnemySpawnTime + 5) { // 5초마다
+        if (elapsedTime > this.lastEnemySpawnTime + 5) {
             this.createNewEnemy(5);
+            if (Math.random() < 0.5) {
+                this.createNewEnemy(5);
+            } else if (Math.random() >= 0.9) {
+                this.createNewEnemy(15);
+            }
             this.lastEnemySpawnTime = elapsedTime;
         }
     }
 
     updateUpgradeCard(elapsedTime) {
-        if (elapsedTime > this.lastUpgradeCardTime + 8) { // 8초마다
+        if (elapsedTime > this.lastUpgradeCardTime + 8) {
             this.cardEvent.triggerUpgradeCardSelection();
             this.lastUpgradeCardTime = elapsedTime;
         }
