@@ -49,6 +49,12 @@ export class MainScene extends Phaser.Scene {
             enable: true
         }).on('update', this.handleJoystickInput, this);
 
+        // 디바운스 적용 (100ms)
+        this.handleJoystickInput = this.debounce(this.handleJoystickInput.bind(this), 100);
+
+        // 스로틀링 적용 (100ms)
+        this.handleJoystickInput = this.throttle(this.handleJoystickInput.bind(this), 100);
+
         // 적 생성 시 HP 증가를 위한 초기화
         this.enemyHpIncreaseRate = 0;
 
@@ -119,15 +125,46 @@ export class MainScene extends Phaser.Scene {
         }
     }
 
+    debounce(func, delay) {
+        let inDebounce;
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(inDebounce);
+            inDebounce = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+
+    throttle(func, limit) {
+        let lastFunc;
+        let lastRan;
+        return function() {
+            const context = this;
+            const args = arguments;
+            if (!lastRan) {
+                func.apply(context, args);
+                lastRan = Date.now();
+            } else {
+                clearTimeout(lastFunc);
+                lastFunc = setTimeout(function() {
+                    if ((Date.now() - lastRan) >= limit) {
+                        func.apply(context, args);
+                        lastRan = Date.now();
+                    }
+                }, limit - (Date.now() - lastRan));
+            }
+        };
+    }
+
     handleJoystickInput() {
         const forceX = this.joystick.forceX;
         const forceY = this.joystick.forceY;
-    
+
         // Normalize the force values to ensure the speed does not exceed hero.speed
         const magnitude = Math.sqrt(forceX * forceX + forceY * forceY);
         const normalizedForceX = (forceX / magnitude) || 0;
         const normalizedForceY = (forceY / magnitude) || 0;
-    
+
         // Apply the normalized force values multiplied by hero.speed
         this.hero.body.setVelocity(normalizedForceX * this.hero.speed, normalizedForceY * this.hero.speed);
     }
@@ -203,7 +240,7 @@ export class MainScene extends Phaser.Scene {
     createCollisionEffect(x, y, isCritical, color) {
         const effectSize = isCritical ? 15 : 10; // 크리티컬일 경우 더 큰 이펙트
         //console.log(color);
-    
+
         const effect = this.add.circle(x, y, effectSize, color);
         this.tweens.add({
             targets: effect,
