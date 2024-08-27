@@ -7,7 +7,6 @@ export class CardEvent {
             { text: '무기 데미지 20% 증가', effect: 'increaseDamage' },
             { text: '무기 공속 20% 증가', effect: 'increaseFireRate' },
             { text: '크리확률 20% 증가', effect: 'increaseCriticalChance' },
-            { text: '내 속도 20% 증가', effect: 'increaseSpeed' },
             { text: '무기 속도 20% 증가', effect: 'increaseWeaponSpeed' },
             { text: '크리배율 20% 증가', effect: 'increaseCriticalRate' }
         ];
@@ -52,7 +51,7 @@ export class CardEvent {
 
         // UI 생성
         this.scene.upgradeCardTexts = selectedCards.map((card, index) => {
-            const fireRatePerSecond = (1000 / card.fireRate).toFixed(2); // 초당 발사 수 계산
+            const fireRatePerSecond = (1000 / card.fireRate).toFixed(1); // 초당 발사 수 계산
             const text = this.scene.add.text(this.scene.scale.width / 2, this.scene.scale.height / 2 + index * 60, card.text || `${card.name} (데미지: ${card.damage}, 공속: ${fireRatePerSecond}발/초, 크리확률: ${card.criticalChance}, 크리배율: ${card.criticalRate})`, {
                 fontSize: '24px',
                 fill: '#000',
@@ -122,7 +121,7 @@ export class CardEvent {
                 this.applyUpgrade(upgradeCard.effect);
             } else {
                 // 무기 카드인 경우
-                const weaponCard = weaponCards.find(card => `${card.name} (데미지: ${card.damage}, 공속: ${(1000 / card.fireRate).toFixed(2)}발/초, 크리확률: ${card.criticalChance}, 크리배율: ${card.criticalRate})` === selectedCard.text);
+                const weaponCard = weaponCards.find(card => `${card.name} (데미지: ${card.damage}, 공속: ${(1000 / card.fireRate).toFixed(1)}발/초, 크리확률: ${card.criticalChance}, 크리배율: ${card.criticalRate})` === selectedCard.text);
                 if (weaponCard) {
                     this.applyUpgrade(weaponCard);
                 }
@@ -160,9 +159,6 @@ export class CardEvent {
                     break;
                 case 'increaseSpeed':
                     this.scene.hero.speed *= 1.2;
-                    break;
-                case 'increaseWeaponSpeed':
-                    this.scene.hero.weapons.forEach(weapon => weapon.weaponSpeed *= 1.2);
                     break;
                 case 'increaseCriticalRate':
                     this.scene.hero.weapons.forEach(weapon => weapon.criticalRate *= 1.2);
