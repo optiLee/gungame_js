@@ -59,8 +59,9 @@ export class MainScene extends Phaser.Scene {
         this.createNewEnemy(5);
 
         // Add test weapons to hero
-        this.hero.weapons.push({ time: 0, weaponSpeed: 100, damage: 10, criticalRate: 10, criticalChance: 0.5, fireRate: 1000, color: 0x0000ff });
-        this.hero.weapons.push({ time: 0, weaponSpeed: 300, damage: 5, criticalRate: 2, criticalChance: 0.2, fireRate: 300, color: 0x00ff00 });
+        //this.hero.weapons.push({ time: 0, weaponSpeed: 100, damage: 10, criticalRate: 10, criticalChance: 0.5, fireRate: 1000, color: 0x0000ff });
+        //this.hero.weapons.push({ time: 0, weaponSpeed: 300, damage: 5, criticalRate: 2, criticalChance: 0.2, fireRate: 300, color: 0x00ff00 });
+        this.cardEvent.triggerUpgradeCardSelection("weaponOnly");
 
         this.physics.add.collider(this.heroGraphics, this.enemies, this.handleHeroEnemyCollision, null, this);
         this.physics.add.collider(this.enemies, this.enemies);
@@ -85,7 +86,7 @@ export class MainScene extends Phaser.Scene {
             const seconds = Math.floor(this.elapsedTime % 60);
             this.elapsedTimeText.setText(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
 
-            this.handleInput(delta);
+            this.handleInput();
             this.handleWeaponFire(time);
             this.moveEnemiesTowardsHero(this.elapsedTime);
 
@@ -94,7 +95,7 @@ export class MainScene extends Phaser.Scene {
         }
     }
 
-    handleInput(delta) {
+    handleInput() {
         if (this.cursors.left.isDown) {
             this.heroGraphics.body.setVelocityX(-this.hero.speed);
         } else if (this.cursors.right.isDown) {
@@ -238,9 +239,9 @@ export class MainScene extends Phaser.Scene {
             //const enemyType = Phaser.Math.Between(0, 2) === 0 ? 'small' : (Phaser.Math.Between(0, 1) === 0 ? 'medium' : 'large');
             const randomValue = Phaser.Math.Between(1, 100); // 1부터 100까지의 무작위 숫자 생성
             let enemyType;
-            if (randomValue <= 50) {
+            if (randomValue <= 80) {
                 enemyType = 'small'; // 1부터 50까지: 50%
-            } else if (randomValue <= 80) {
+            } else if (randomValue <= 95) {
                 enemyType = 'medium'; // 51부터 80까지: 30%
             } else {
                 enemyType = 'large'; // 81부터 100까지: 20%
@@ -273,13 +274,14 @@ export class MainScene extends Phaser.Scene {
     }
 
     updateEnemySpawn(elapsedTime, minutes) {
+        let enemySpawnCnt = 2 + elapsedTime / 10;
         if (elapsedTime > this.lastEnemySpawnTime + 5) {
-            this.createNewEnemy(5);
+            this.createNewEnemy(enemySpawnCnt);
             let i = Math.random() + (minutes / 10);
-            if (i >= 0.4 && i < 0.9) {
-                this.createNewEnemy(5);
-            } else if (i >= 0.9) {
-                this.createNewEnemy(15);
+            if (i >= 0.7 && i < 0.99) {
+                this.createNewEnemy(enemySpawnCnt * 2);
+            } else if (i >= 0.99) {
+                this.createNewEnemy(enemySpawnCnt * 3);
             }
             this.lastEnemySpawnTime = elapsedTime;
         }
@@ -287,10 +289,9 @@ export class MainScene extends Phaser.Scene {
 
     updateUpgradeCard(elapsedTime) {
         // 지수 함수를 사용하여 호출 간격을 조정
-        let interval = Math.exp(elapsedTime / 100) * 8; 
+        let interval = Math.exp(elapsedTime / 120) * 8; 
 
         if (elapsedTime > this.lastUpgradeCardTime + interval) {
-            console.log(interval);
             this.cardEvent.triggerUpgradeCardSelection();
             this.lastUpgradeCardTime = elapsedTime;
         }

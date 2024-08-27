@@ -1,4 +1,4 @@
-// card_event.js 파일
+import { weaponCards } from './weapon.js';
 
 export class CardEvent {
     constructor(scene) {
@@ -9,7 +9,6 @@ export class CardEvent {
             { text: '크리확률 20% 증가', effect: 'increaseCriticalChance' },
             { text: '내 속도 20% 증가', effect: 'increaseSpeed' },
             { text: '무기 속도 20% 증가', effect: 'increaseWeaponSpeed' },
-            { text: '새로운 무기 추가', effect: 'addNewWeapon' },
             { text: '크리배율 20% 증가', effect: 'increaseCriticalRate' }
         ];
         this.selectedCardIndex = 0;
@@ -19,7 +18,7 @@ export class CardEvent {
         this.handleKeyDown = this.handleKeyDown.bind(this);
     }
 
-    triggerUpgradeCardSelection() {
+    triggerUpgradeCardSelection(upgradeType) {
         this.selectedCardIndex = 0;
         this.keyboardEnabled = true;
 
@@ -32,12 +31,29 @@ export class CardEvent {
         this.scene.physics.pause();
         this.scene.isPaused = true; // 게임 일시 중지
 
-        // 랜덤하게 세 장의 강화카드를 선택
-        const selectedCards = Phaser.Utils.Array.Shuffle(this.upgradeCards).slice(0, 3);
+        let selectedCards;
+        // 무기와 업그레이드를 랜덤하게 섞어서 선택
+        const availableWeaponCards = weaponCards.filter(weaponCard => 
+            !this.scene.hero.weapons.some(weapon => weapon.name === weaponCard.name)
+        );
+
+        // 현재 무기 개수 확인
+        const currentWeaponCount = this.scene.hero.weapons.length;
+
+        if (currentWeaponCount >= 3) {
+            // 무기가 3개 이상인 경우 업그레이드 카드만 선택
+            selectedCards = Phaser.Utils.Array.Shuffle(this.upgradeCards).slice(0, 3);
+        } else if (upgradeType === 'weaponOnly') {
+            selectedCards = Phaser.Utils.Array.Shuffle(availableWeaponCards).slice(0, 3);
+        } else {
+            const allCards = [...this.upgradeCards, ...availableWeaponCards];
+            selectedCards = Phaser.Utils.Array.Shuffle(allCards).slice(0, 3);
+        }
 
         // UI 생성
         this.scene.upgradeCardTexts = selectedCards.map((card, index) => {
-            const text = this.scene.add.text(this.scene.scale.width / 2, this.scene.scale.height / 2 + index * 60, card.text, {
+            const fireRatePerSecond = (1000 / card.fireRate).toFixed(2); // 초당 발사 수 계산
+            const text = this.scene.add.text(this.scene.scale.width / 2, this.scene.scale.height / 2 + index * 60, card.text || `${card.name} (데미지: ${card.damage}, 공속: ${fireRatePerSecond}발/초, 크리확률: ${card.criticalChance}, 크리배율: ${card.criticalRate})`, {
                 fontSize: '24px',
                 fill: '#000',
                 backgroundColor: '#ffffff',
@@ -45,7 +61,7 @@ export class CardEvent {
             }).setOrigin(0.5);
             text.setInteractive();
             text.on('pointerdown', () => {
-                this.applyUpgrade(card.effect);
+                this.applyUpgrade(card.effect || card);
             });
             return text;
         });
@@ -71,13 +87,13 @@ export class CardEvent {
                 this.confirmSelection();
                 break;
             case 'Digit1':
-                this.applyUpgrade(this.scene.upgradeCardTexts[0]?.effect);
+                this.applyUpgrade(this.scene.upgradeCardTexts[0]?.effect || this.scene.upgradeCardTexts[0]?.name);
                 break;
             case 'Digit2':
-                this.applyUpgrade(this.scene.upgradeCardTexts[1]?.effect);
+                this.applyUpgrade(this.scene.upgradeCardTexts[1]?.effect || this.scene.upgradeCardTexts[1]?.name);
                 break;
             case 'Digit3':
-                this.applyUpgrade(this.scene.upgradeCardTexts[2]?.effect);
+                this.applyUpgrade(this.scene.upgradeCardTexts[2]?.effect || this.scene.upgradeCardTexts[2]?.name);
                 break;
         }
     }
@@ -99,9 +115,17 @@ export class CardEvent {
     confirmSelection() {
         if (this.keyboardEnabled) {
             const selectedCard = this.scene.upgradeCardTexts[this.selectedCardIndex];
-            const effect = this.upgradeCards.find(card => card.text === selectedCard.text)?.effect;
-            if (effect) {
-                this.applyUpgrade(effect);
+            const upgradeCard = this.upgradeCards.find(card => card.text === selectedCard.text);
+            
+            if (upgradeCard) {
+                // 업그레이드 카드인 경우
+                this.applyUpgrade(upgradeCard.effect);
+            } else {
+                // 무기 카드인 경우
+                const weaponCard = weaponCards.find(card => `${card.name} (데미지: ${card.damage}, 공속: ${(1000 / card.fireRate).toFixed(2)}발/초, 크리확률: ${card.criticalChance}, 크리배율: ${card.criticalRate})` === selectedCard.text);
+                if (weaponCard) {
+                    this.applyUpgrade(weaponCard);
+                }
             }
         }
     }
@@ -123,28 +147,30 @@ export class CardEvent {
     applyUpgrade(effect) {
         this.keyboardEnabled = false; // 키보드 입력 비활성화
         // 강화카드 효과 적용
-        switch (effect) {
-            case 'increaseDamage':
-                this.scene.hero.weapons.forEach(weapon => weapon.damage *= 1.2);
-                break;
-            case 'increaseFireRate':
-                this.scene.hero.weapons.forEach(weapon => weapon.fireRate /= 1.2);
-                break;
-            case 'increaseCriticalChance':
-                this.scene.hero.weapons.forEach(weapon => weapon.criticalChance *= 1.2);
-                break;
-            case 'increaseSpeed':
-                this.scene.hero.speed *= 1.2;
-                break;
-            case 'increaseWeaponSpeed':
-                this.scene.hero.weapons.forEach(weapon => weapon.weaponSpeed *= 1.2);
-                break;
-            case 'addNewWeapon':
-                this.scene.hero.weapons.push({ time: 0, weaponSpeed: 200, damage: 7, criticalRate: 3, criticalChance: 0.3, fireRate: 700, color: 0xff00ff }); // 새로운 무기 추가
-                break;
-            case 'increaseCriticalRate':
-                this.scene.hero.weapons.forEach(weapon => weapon.criticalRate *= 1.2);
-                break;
+        if (typeof effect === 'string') {
+            switch (effect) {
+                case 'increaseDamage':
+                    this.scene.hero.weapons.forEach(weapon => weapon.damage *= 1.2);
+                    break;
+                case 'increaseFireRate':
+                    this.scene.hero.weapons.forEach(weapon => weapon.fireRate /= 1.2);
+                    break;
+                case 'increaseCriticalChance':
+                    this.scene.hero.weapons.forEach(weapon => weapon.criticalChance *= 1.2);
+                    break;
+                case 'increaseSpeed':
+                    this.scene.hero.speed *= 1.2;
+                    break;
+                case 'increaseWeaponSpeed':
+                    this.scene.hero.weapons.forEach(weapon => weapon.weaponSpeed *= 1.2);
+                    break;
+                case 'increaseCriticalRate':
+                    this.scene.hero.weapons.forEach(weapon => weapon.criticalRate *= 1.2);
+                    break;
+            }
+        } else {
+            // 새로운 무기 추가
+            this.scene.hero.weapons.push(effect);
         }
 
         // UI 제거 및 게임 재개

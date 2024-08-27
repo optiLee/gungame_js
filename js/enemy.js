@@ -4,7 +4,7 @@ export class Enemy {
         this.x = x;
         this.y = y;
         this.type = type;
-        this.dropRate = 0.05;  // 기본 아이템 드롭 확률 설정
+        this.dropRate = 0.02;  // 기본 아이템 드롭 확률 설정
         this.mass = 1;
         this.initializeProperties(type);
     }
@@ -12,10 +12,10 @@ export class Enemy {
     initializeProperties(type) {
         switch (type) {
             case 'small':
-                this.hp = 10;
+                this.hp = 8;
                 this.size = 8;
                 this.color = 0xff0000;
-                this.speed = 150;
+                this.speed = 120;
                 break;
             case 'medium':
                 this.hp = 100;
@@ -29,7 +29,7 @@ export class Enemy {
                 this.size = 18;
                 this.color = 0xffd700;
                 this.speed = 30;
-                this.dropRate = 0.5;  // large일 경우 확률 조정
+                this.dropRate = 0.2;  // large일 경우 확률 조정
                 this.mass = 10;
                 break;
             default:
