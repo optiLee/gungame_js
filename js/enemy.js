@@ -29,7 +29,7 @@ export class Enemy {
                 this.size = 18;
                 this.color = 0xffd700;
                 this.speed = 30;
-                this.dropRate = 0.2;  // large일 경우 확률 조정
+                this.dropRate = 0.5;  // large일 경우 확률 조정
                 this.mass = 10;
                 break;
             default:

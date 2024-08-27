@@ -80,16 +80,16 @@ export class MainScene extends Phaser.Scene {
 
     update(time, delta) {
         if (!this.isPaused) {
-            this.handleInput(delta);
-            this.handleWeaponFire(time);
-            this.moveEnemiesTowardsHero();
-
             this.elapsedTime += delta / 1000;
             const minutes = Math.floor(this.elapsedTime / 60);
             const seconds = Math.floor(this.elapsedTime % 60);
             this.elapsedTimeText.setText(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
 
-            this.updateEnemySpawn(this.elapsedTime);
+            this.handleInput(delta);
+            this.handleWeaponFire(time);
+            this.moveEnemiesTowardsHero(this.elapsedTime);
+
+            this.updateEnemySpawn(this.elapsedTime, minutes);
             this.updateUpgradeCard(this.elapsedTime);
         }
     }
@@ -157,6 +157,7 @@ export class MainScene extends Phaser.Scene {
         enemy.hpText.setText(roundedHp.toString());
 
         if (enemy.hp <= 0) {
+            //console.log("enemy.dropRate: ", enemy.dropRate)
             if (Math.random() < enemy.dropRate) {
                 this.cardEvent.triggerUpgradeCardSelection();
             }
@@ -184,10 +185,10 @@ export class MainScene extends Phaser.Scene {
         });
     }
 
-    moveEnemiesTowardsHero() {
+    moveEnemiesTowardsHero(elapsedTime) {
         this.enemies.children.iterate((enemy) => {
-            //console.log("1: ", enemy.speed);
-            this.physics.moveToObject(enemy, this.heroGraphics, enemy.speed);
+            let i = Math.floor(elapsedTime / 5); //시간에 따른 속도 증가
+            this.physics.moveToObject(enemy, this.heroGraphics, enemy.speed + (i * 2));
             enemy.hpText.setPosition(enemy.x, enemy.y);
         });
     }
@@ -271,12 +272,13 @@ export class MainScene extends Phaser.Scene {
         this.isPaused = true;
     }
 
-    updateEnemySpawn(elapsedTime) {
+    updateEnemySpawn(elapsedTime, minutes) {
         if (elapsedTime > this.lastEnemySpawnTime + 5) {
             this.createNewEnemy(5);
-            if (Math.random() < 0.5) {
+            let i = Math.random() + (minutes / 10);
+            if (i >= 0.4 && i < 0.9) {
                 this.createNewEnemy(5);
-            } else if (Math.random() >= 0.9) {
+            } else if (i >= 0.9) {
                 this.createNewEnemy(15);
             }
             this.lastEnemySpawnTime = elapsedTime;
@@ -284,7 +286,11 @@ export class MainScene extends Phaser.Scene {
     }
 
     updateUpgradeCard(elapsedTime) {
-        if (elapsedTime > this.lastUpgradeCardTime + 8) {
+        // 지수 함수를 사용하여 호출 간격을 조정
+        let interval = Math.exp(elapsedTime / 100) * 8; 
+
+        if (elapsedTime > this.lastUpgradeCardTime + interval) {
+            console.log(interval);
             this.cardEvent.triggerUpgradeCardSelection();
             this.lastUpgradeCardTime = elapsedTime;
         }
