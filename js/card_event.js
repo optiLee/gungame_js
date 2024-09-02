@@ -69,7 +69,7 @@ export class CardEvent {
             const image = this.scene.add.image(
                 this.scene.scale.width / 2 - cardWidth / 2 + padding + imageSize / 2,
                 cardBackground.y,
-                'cardImage' // 여기에 이미지 키를 넣어주세요
+                card.image || 'upgrade' // 여기에 이미지 키를 넣어주세요
             ).setDisplaySize(imageSize, imageSize);
 
             // 이름

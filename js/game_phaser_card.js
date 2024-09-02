@@ -15,6 +15,14 @@ export class MainScene extends Phaser.Scene {
             './js/rexvirtualjoystickplugin.min.js',
             true
         );
+
+        // 무기 이미지 프리로드
+        this.load.image('canon', './assets/canon.png');
+        this.load.image('gun', './assets/gun.png');
+        this.load.image('rifle', './assets/rifle.png');
+        this.load.image('shotgun', './assets/shotgun.png');
+        this.load.image('sniper', './assets/sniper.png');
+        this.load.image('upgrade', './assets/upgrade.png');
     }
 
     create() {
