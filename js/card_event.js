@@ -72,13 +72,17 @@ export class CardEvent {
                 card.image || 'upgrade' // 여기에 이미지 키를 넣어주세요
             ).setDisplaySize(imageSize, imageSize);
 
+            // 동적 폰트 크기 계산
+            const nameFontSize = Math.floor(this.scene.scale.width / 50); // 화면 너비의 2%를 폰트 크기로 사용
+            const descriptionFontSize = Math.floor(this.scene.scale.width / 80); // 화면 너비의 1.25%를 폰트 크기로 사용
+
             // 이름
             const name = this.scene.add.text(
                 image.x + imageSize / 2 + padding,
-                cardBackground.y - imageSize / 2,
+                cardBackground.y - imageSize / 2 + padding, // 여백 추가
                 card.name,
                 {
-                    fontSize: '24px', // 텍스트 크기 조정
+                    fontSize: `${nameFontSize}px`, // 동적 폰트 크기
                     fill: '#000',
                     fontStyle: 'bold'
                 }
@@ -92,7 +96,7 @@ export class CardEvent {
                 name.y + name.height,
                 description,
                 {
-                    fontSize: '16px', // 텍스트 크기 조정
+                    fontSize: `${descriptionFontSize}px`, // 동적 폰트 크기
                     fill: '#000',
                     wordWrap: { width: cardWidth - imageSize - padding * 4, useAdvancedWrap: true }
                 }
