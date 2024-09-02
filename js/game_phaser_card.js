@@ -277,14 +277,14 @@ export class MainScene extends Phaser.Scene {
         let enemySpawnCnt = 2 + elapsedTime / 10;
         if (elapsedTime > this.lastEnemySpawnTime + 5) {
             this.createNewEnemy(enemySpawnCnt);
-            console.log("* 1: ", enemySpawnCnt);
+            //console.log("* 1: ", enemySpawnCnt);
             let i = Math.random() + (minutes / 20);
             if (i >= 0.7 && i < 0.99) {
                 this.createNewEnemy(enemySpawnCnt * 2);
-                console.log("* 2: ", enemySpawnCnt * 2);
+                //console.log("* 2: ", enemySpawnCnt * 2);
             } else if (i >= 0.99) {
                 this.createNewEnemy(enemySpawnCnt * 3);
-                console.log("* 3: ", enemySpawnCnt * 3);
+                //console.log("* 3: ", enemySpawnCnt * 3);
             }
             this.lastEnemySpawnTime = elapsedTime;
         }

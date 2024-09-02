@@ -4,11 +4,11 @@ export class CardEvent {
     constructor(scene) {
         this.scene = scene;
         this.upgradeCards = [
-            { text: '무기 데미지 20% 증가', effect: 'increaseDamage' },
-            { text: '무기 공속 20% 증가', effect: 'increaseFireRate' },
-            { text: '크리확률 20% 증가', effect: 'increaseCriticalChance' },
-            { text: '무기 속도 20% 증가', effect: 'increaseWeaponSpeed' },
-            { text: '크리배율 20% 증가', effect: 'increaseCriticalRate' }
+            { name: '데미지 증가', text: '무기 데미지 20% 증가', effect: 'increaseDamage' },
+            { name: '공속 증가', text: '무기 공속 20% 증가', effect: 'increaseFireRate' },
+            { name: '크리확률 증가', text: '크리확률 20% 증가', effect: 'increaseCriticalChance' },
+            { name: '속도 증가', text: '무기 속도 20% 증가', effect: 'increaseWeaponSpeed' },
+            { name: '크리배율 증가', text: '크리배율 20% 증가', effect: 'increaseCriticalRate' }
         ];
         this.selectedCardIndex = 0;
         this.keyboardEnabled = true;
@@ -51,18 +51,67 @@ export class CardEvent {
 
         // UI 생성
         this.scene.upgradeCardTexts = selectedCards.map((card, index) => {
-            const fireRatePerSecond = (1000 / card.fireRate).toFixed(1); // 초당 발사 수 계산
-            const text = this.scene.add.text(this.scene.scale.width / 2, this.scene.scale.height / 2 + index * 60, card.text || `${card.name} (데미지: ${card.damage}, 공속: ${fireRatePerSecond}발/초, 크리확률: ${card.criticalChance}, 크리배율: ${card.criticalRate})`, {
-                fontSize: '24px',
-                fill: '#000',
-                backgroundColor: '#ffffff',
-                padding: { x: 10, y: 20 } // 세로 길이 늘리기
-            }).setOrigin(0.5);
-            text.setInteractive();
-            text.on('pointerdown', () => {
+            const cardWidth = 400; // 카드의 너비
+            const cardHeight = this.scene.scale.height / 4; // 카드의 높이 (캔버스의 1/4)
+            const padding = 10;
+
+            // 이미지
+            const image = this.scene.add.image(
+                this.scene.scale.width / 2,
+                this.scene.scale.height / 4 + index * (cardHeight + 20) - cardHeight / 2 + padding,
+                'cardImage' // 여기에 이미지 키를 넣어주세요
+            ).setDisplaySize(cardWidth - padding * 2, cardHeight / 3).setOrigin(0.5);
+
+            // 이름
+            const name = this.scene.add.text(
+                this.scene.scale.width / 2,
+                image.y + image.displayHeight / 2 + padding,
+                card.name,
+                {
+                    fontSize: '24px', // 텍스트 크기 조정
+                    fill: '#000',
+                    fontStyle: 'bold'
+                }
+            ).setOrigin(0.5);
+
+            // 설명
+            const description = card.text || 
+                `데미지: ${card.damage}\n공속: ${(1000 / card.fireRate).toFixed(1)}발/초\n크리확률: ${card.criticalChance}\n크리배율: ${card.criticalRate}`;
+            const descriptionText = this.scene.add.text(
+                this.scene.scale.width / 2,
+                name.y + name.height / 4 + padding,
+                description,
+                {
+                    fontSize: '16px', // 텍스트 크기 조정
+                    fill: '#000',
+                    wordWrap: { width: cardWidth - padding * 2, useAdvancedWrap: true }
+                }
+            ).setOrigin(0.5, 0);
+
+            // 배경
+            const cardBackground = this.scene.add.rectangle(
+                this.scene.scale.width / 2,
+                this.scene.scale.height / 4 + index * (cardHeight + 20),
+                cardWidth,
+                cardHeight,
+                0xffffff
+            ).setOrigin(0.5);
+
+            const container = this.scene.add.container(0, 0, [cardBackground, image, name, descriptionText]);
+            container.setInteractive(new Phaser.Geom.Rectangle(
+                cardBackground.x - cardWidth / 2,
+                cardBackground.y - cardHeight / 2,
+                cardWidth,
+                cardHeight
+            ), Phaser.Geom.Rectangle.Contains);
+
+            container.on('pointerdown', () => {
                 this.applyUpgrade(card.effect || card);
             });
-            return text;
+
+            container.cardData = card; // 카드 데이터 저장
+
+            return container;
         });
 
         this.updateCardSelection();
@@ -86,13 +135,13 @@ export class CardEvent {
                 this.confirmSelection();
                 break;
             case 'Digit1':
-                this.applyUpgrade(this.scene.upgradeCardTexts[0]?.effect || this.scene.upgradeCardTexts[0]?.name);
+                this.applyUpgrade(this.scene.upgradeCardTexts[0]?.cardData.effect || this.scene.upgradeCardTexts[0]?.cardData);
                 break;
             case 'Digit2':
-                this.applyUpgrade(this.scene.upgradeCardTexts[1]?.effect || this.scene.upgradeCardTexts[1]?.name);
+                this.applyUpgrade(this.scene.upgradeCardTexts[1]?.cardData.effect || this.scene.upgradeCardTexts[1]?.cardData);
                 break;
             case 'Digit3':
-                this.applyUpgrade(this.scene.upgradeCardTexts[2]?.effect || this.scene.upgradeCardTexts[2]?.name);
+                this.applyUpgrade(this.scene.upgradeCardTexts[2]?.cardData.effect || this.scene.upgradeCardTexts[2]?.cardData);
                 break;
         }
     }
@@ -114,33 +163,32 @@ export class CardEvent {
     confirmSelection() {
         if (this.keyboardEnabled) {
             const selectedCard = this.scene.upgradeCardTexts[this.selectedCardIndex];
-            const upgradeCard = this.upgradeCards.find(card => card.text === selectedCard.text);
-            
-            if (upgradeCard) {
+            const cardData = selectedCard.cardData;
+
+            if (cardData.effect) {
                 // 업그레이드 카드인 경우
-                this.applyUpgrade(upgradeCard.effect);
+                this.applyUpgrade(cardData.effect);
             } else {
                 // 무기 카드인 경우
-                const weaponCard = weaponCards.find(card => `${card.name} (데미지: ${card.damage}, 공속: ${(1000 / card.fireRate).toFixed(1)}발/초, 크리확률: ${card.criticalChance}, 크리배율: ${card.criticalRate})` === selectedCard.text);
-                if (weaponCard) {
-                    this.applyUpgrade(weaponCard);
-                }
+                this.applyUpgrade(cardData);
             }
         }
     }
 
     updateCardSelection() {
-        if (this.scene.upgradeCardTexts) {
-            this.scene.upgradeCardTexts.forEach((text, index) => {
-                if (text) { // text가 유효한지 확인
-                    if (index === this.selectedCardIndex) {
-                        text.setStyle({ backgroundColor: '#ff0' }); // 선택된 카드의 테두리 색상 변경
-                    } else {
-                        text.setStyle({ backgroundColor: '#ffffff' });
-                    }
-                }
-            });
-        }
+        this.scene.upgradeCardTexts.forEach((container, index) => {
+            if (index === this.selectedCardIndex) {
+                container.list[0].setFillStyle(0x4d4d4d); // 진한 회색 배경
+                container.list[2].setColor('#ffffff'); // 흰색 텍스트 (이름)
+                container.list[3].setColor('#ffffff'); // 흰색 텍스트 (설명)
+                container.list[0].setStrokeStyle(4, 0xffa500); // 주황색 테두리
+            } else {
+                container.list[0].setFillStyle(0xffffff); // 원래 흰색 배경
+                container.list[2].setColor('#000000'); // 원래 검은색 텍스트 (이름)
+                container.list[3].setColor('#000000'); // 원래 검은색 텍스트 (설명)
+                container.list[0].setStrokeStyle(0); // 테두리 제거
+            }
+        });
     }
 
     applyUpgrade(effect) {
@@ -168,12 +216,16 @@ export class CardEvent {
             // 새로운 무기 추가
             this.scene.hero.weapons.push(effect);
         }
-
-        // UI 제거 및 게임 재개
+    
+        // UI 제거
         if (this.scene.upgradeCardTexts) {
             this.scene.upgradeCardTexts.forEach(text => text.destroy());
         }
-        this.scene.physics.resume();
-        this.scene.isPaused = false;
+    
+        // 1초 대기 후 게임 재개
+        this.scene.time.delayedCall(500, () => {
+            this.scene.physics.resume();
+            this.scene.isPaused = false;
+        }, [], this);
     }
 }
