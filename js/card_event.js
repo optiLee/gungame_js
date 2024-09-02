@@ -51,42 +51,9 @@ export class CardEvent {
 
         // UI 생성
         this.scene.upgradeCardTexts = selectedCards.map((card, index) => {
-            const cardWidth = 400; // 카드의 너비
-            const cardHeight = this.scene.scale.height / 4; // 카드의 높이 (캔버스의 1/4)
+            const cardWidth = this.scene.scale.width * 0.8; // 카드의 너비
+            const cardHeight = cardWidth / 4; // 카드의 높이 (가로:세로 = 4:1 비율)
             const padding = 10;
-
-            // 이미지
-            const image = this.scene.add.image(
-                this.scene.scale.width / 2,
-                this.scene.scale.height / 4 + index * (cardHeight + 20) - cardHeight / 2 + padding,
-                'cardImage' // 여기에 이미지 키를 넣어주세요
-            ).setDisplaySize(cardWidth - padding * 2, cardHeight / 3).setOrigin(0.5);
-
-            // 이름
-            const name = this.scene.add.text(
-                this.scene.scale.width / 2,
-                image.y + image.displayHeight / 2 + padding,
-                card.name,
-                {
-                    fontSize: '24px', // 텍스트 크기 조정
-                    fill: '#000',
-                    fontStyle: 'bold'
-                }
-            ).setOrigin(0.5);
-
-            // 설명
-            const description = card.text || 
-                `데미지: ${card.damage}\n공속: ${(1000 / card.fireRate).toFixed(1)}발/초\n크리확률: ${card.criticalChance}\n크리배율: ${card.criticalRate}`;
-            const descriptionText = this.scene.add.text(
-                this.scene.scale.width / 2,
-                name.y + name.height / 4 + padding,
-                description,
-                {
-                    fontSize: '16px', // 텍스트 크기 조정
-                    fill: '#000',
-                    wordWrap: { width: cardWidth - padding * 2, useAdvancedWrap: true }
-                }
-            ).setOrigin(0.5, 0);
 
             // 배경
             const cardBackground = this.scene.add.rectangle(
@@ -96,6 +63,40 @@ export class CardEvent {
                 cardHeight,
                 0xffffff
             ).setOrigin(0.5);
+
+            // 이미지
+            const imageSize = cardHeight - padding * 2;
+            const image = this.scene.add.image(
+                this.scene.scale.width / 2 - cardWidth / 2 + padding + imageSize / 2,
+                cardBackground.y,
+                'cardImage' // 여기에 이미지 키를 넣어주세요
+            ).setDisplaySize(imageSize, imageSize);
+
+            // 이름
+            const name = this.scene.add.text(
+                image.x + imageSize / 2 + padding,
+                cardBackground.y - imageSize / 2,
+                card.name,
+                {
+                    fontSize: '24px', // 텍스트 크기 조정
+                    fill: '#000',
+                    fontStyle: 'bold'
+                }
+            ).setOrigin(0, 0.5);
+
+            // 설명
+            const description = card.text || 
+                `데미지: ${card.damage}\n공속: ${(1000 / card.fireRate).toFixed(1)}발/초\n크리확률: ${card.criticalChance}\n크리배율: ${card.criticalRate}`;
+            const descriptionText = this.scene.add.text(
+                name.x,
+                name.y + name.height,
+                description,
+                {
+                    fontSize: '16px', // 텍스트 크기 조정
+                    fill: '#000',
+                    wordWrap: { width: cardWidth - imageSize - padding * 4, useAdvancedWrap: true }
+                }
+            ).setOrigin(0, 0);
 
             const container = this.scene.add.container(0, 0, [cardBackground, image, name, descriptionText]);
             container.setInteractive(new Phaser.Geom.Rectangle(
