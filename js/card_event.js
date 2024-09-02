@@ -73,8 +73,8 @@ export class CardEvent {
             ).setDisplaySize(imageSize, imageSize);
 
             // 동적 폰트 크기 계산
-            const nameFontSize = Math.floor(this.scene.scale.width / 50); // 화면 너비의 2%를 폰트 크기로 사용
-            const descriptionFontSize = Math.floor(this.scene.scale.width / 80); // 화면 너비의 1.25%를 폰트 크기로 사용
+            const nameFontSize = Math.floor(this.scene.scale.width / 40); // 화면 너비의 2%를 폰트 크기로 사용
+            const descriptionFontSize = Math.floor(this.scene.scale.width / 47); // 화면 너비의 1.25%를 폰트 크기로 사용
 
             // 이름
             const name = this.scene.add.text(
