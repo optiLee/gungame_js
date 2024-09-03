@@ -51,9 +51,9 @@ export class CardEvent {
 
         // UI 생성
         this.scene.upgradeCardTexts = selectedCards.map((card, index) => {
-            const cardWidth = this.scene.scale.width * 0.8; // 카드의 너비
-            const cardHeight = cardWidth / 4; // 카드의 높이 (가로:세로 = 4:1 비율)
-            const padding = 10;
+            const cardWidth = this.scene.scale.width * 0.9; // 카드의 너비
+            const cardHeight = cardWidth / 3.2; // 카드의 높이 (가로:세로 = 4:1 비율)
+            const padding = 8;
 
             // 배경
             const cardBackground = this.scene.add.rectangle(
@@ -73,8 +73,8 @@ export class CardEvent {
             ).setDisplaySize(imageSize, imageSize);
 
             // 동적 폰트 크기 계산
-            const nameFontSize = Math.floor(this.scene.scale.width / 35); // 화면 너비의 2%를 폰트 크기로 사용
-            const descriptionFontSize = Math.floor(this.scene.scale.width / 40); // 화면 너비의 1.25%를 폰트 크기로 사용
+            const nameFontSize = Math.floor(this.scene.scale.width / 35); // 화면 너비의 일정비율 폰트 크기로 사용
+            const descriptionFontSize = Math.floor(this.scene.scale.width / 45); // 화면 너비의 일정비율 폰트 크기로 사용
 
             // 이름
             const name = this.scene.add.text(
@@ -140,15 +140,15 @@ export class CardEvent {
             case 'Space':
                 this.confirmSelection();
                 break;
-            case 'Digit1':
-                this.applyUpgrade(this.scene.upgradeCardTexts[0]?.cardData.effect || this.scene.upgradeCardTexts[0]?.cardData);
-                break;
-            case 'Digit2':
-                this.applyUpgrade(this.scene.upgradeCardTexts[1]?.cardData.effect || this.scene.upgradeCardTexts[1]?.cardData);
-                break;
-            case 'Digit3':
-                this.applyUpgrade(this.scene.upgradeCardTexts[2]?.cardData.effect || this.scene.upgradeCardTexts[2]?.cardData);
-                break;
+            // case 'Digit1':
+            //     this.applyUpgrade(this.scene.upgradeCardTexts[0]?.cardData.effect || this.scene.upgradeCardTexts[0]?.cardData);
+            //     break;
+            // case 'Digit2':
+            //     this.applyUpgrade(this.scene.upgradeCardTexts[1]?.cardData.effect || this.scene.upgradeCardTexts[1]?.cardData);
+            //     break;
+            // case 'Digit3':
+            //     this.applyUpgrade(this.scene.upgradeCardTexts[2]?.cardData.effect || this.scene.upgradeCardTexts[2]?.cardData);
+            //     break;
         }
     }
 
