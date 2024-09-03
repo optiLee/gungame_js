@@ -73,8 +73,8 @@ export class CardEvent {
             ).setDisplaySize(imageSize, imageSize);
 
             // 동적 폰트 크기 계산
-            const nameFontSize = Math.floor(this.scene.scale.width / 40); // 화면 너비의 2%를 폰트 크기로 사용
-            const descriptionFontSize = Math.floor(this.scene.scale.width / 47); // 화면 너비의 1.25%를 폰트 크기로 사용
+            const nameFontSize = Math.floor(this.scene.scale.width / 35); // 화면 너비의 2%를 폰트 크기로 사용
+            const descriptionFontSize = Math.floor(this.scene.scale.width / 40); // 화면 너비의 1.25%를 폰트 크기로 사용
 
             // 이름
             const name = this.scene.add.text(
@@ -98,7 +98,8 @@ export class CardEvent {
                 {
                     fontSize: `${descriptionFontSize}px`, // 동적 폰트 크기
                     fill: '#000',
-                    wordWrap: { width: cardWidth - imageSize - padding * 4, useAdvancedWrap: true }
+                    wordWrap: { width: cardWidth - imageSize - padding * 4, useAdvancedWrap: true },
+                    lineSpacing: 6
                 }
             ).setOrigin(0, 0);
 
@@ -228,7 +229,7 @@ export class CardEvent {
         }
     
         // 1초 대기 후 게임 재개
-        this.scene.time.delayedCall(500, () => {
+        this.scene.time.delayedCall(250, () => {
             this.scene.physics.resume();
             this.scene.isPaused = false;
         }, [], this);
