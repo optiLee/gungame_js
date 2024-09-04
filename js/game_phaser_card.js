@@ -1,8 +1,10 @@
-// MainScene.js
+// MainScene.js 파일
+
 import { CardEvent } from './card_event.js';
 import { Util } from './util.js';
 import { Hero } from './hero.js';
 import { Enemy } from './enemy.js';
+import { weaponCards } from './weapon.js'; // weaponCards 가져오기
 
 export class MainScene extends Phaser.Scene {
     constructor() {
@@ -26,6 +28,12 @@ export class MainScene extends Phaser.Scene {
     }
 
     create() {
+        // 화면 비율 설정
+        this.updateAspectRatio();
+
+        // resize 이벤트 처리
+        this.scale.on('resize', this.updateAspectRatio, this);
+
         this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x646464).setOrigin(0);
 
         this.cardEvent = new CardEvent(this);
@@ -67,8 +75,8 @@ export class MainScene extends Phaser.Scene {
         this.createNewEnemy(5);
 
         // Add test weapons to hero
-        //this.hero.weapons.push({ time: 0, weaponSpeed: 100, damage: 10, criticalRate: 10, criticalChance: 0.5, fireRate: 1000, color: 0x0000ff });
-        //this.hero.weapons.push({ time: 0, weaponSpeed: 300, damage: 5, criticalRate: 2, criticalChance: 0.2, fireRate: 300, color: 0x00ff00 });
+        // this.hero.weapons.push(weaponCards[0]); // 예시로 첫 번째 무기 추가
+        // this.hero.weapons.push(weaponCards[1]); // 예시로 두 번째 무기 추가
         this.cardEvent.triggerUpgradeCardSelection("weaponOnly");
 
         this.physics.add.collider(this.heroGraphics, this.enemies, this.handleHeroEnemyCollision, null, this);
@@ -81,10 +89,27 @@ export class MainScene extends Phaser.Scene {
         this.elapsedTime = 0;
         this.elapsedTimeText = this.add.text(this.scale.width - 150, 16, '0:00', { fontSize: '15px', fill: '#000' }).setOrigin(0.5, 0);
 
-        //this.enemyDeathUpgradeChance = 0.1;
+        // this.enemyDeathUpgradeChance = 0.1;
 
         this.lastEnemySpawnTime = 0;
         this.lastUpgradeCardTime = 0;
+    }
+
+    updateAspectRatio() {
+        const aspectRatio = 1.3 / 2.8;
+        const height = this.scale.height;
+        const width = height * aspectRatio;
+
+        this.scale.resize(width, height);
+        this.physics.world.setBounds(0, 0, width, height);
+
+        if (this.heroGraphics) {
+            this.heroGraphics.setPosition(this.scale.width / 2, this.scale.height / 2);
+        }
+
+        if (this.elapsedTimeText) {
+            this.elapsedTimeText.setPosition(this.scale.width - 150, 16);
+        }
     }
 
     update(time, delta) {
@@ -137,20 +162,40 @@ export class MainScene extends Phaser.Scene {
             if (time > weapon.time + weapon.fireRate) {
                 const closestEnemy = this.util.getClosestEnemy(this.enemies, this.heroGraphics);
                 if (closestEnemy) {
-                    const weaponSprite = this.add.circle(this.heroGraphics.x, this.heroGraphics.y, 3, weapon.color);
-                    this.physics.add.existing(weaponSprite);
-                    weaponSprite.body.setCollideWorldBounds(true);
-                    weaponSprite.damage = weapon.damage;
-                    weaponSprite.criticalChance = weapon.criticalChance;
-                    weaponSprite.criticalRate = weapon.criticalRate;
-                    weaponSprite.color = weapon.color;
-                    this.weapons.add(weaponSprite);
-                    this.physics.moveToObject(weaponSprite, closestEnemy, weapon.weaponSpeed);
+                    const angleStep = weapon.fireCount > 1 ? weapon.fireAngle / (weapon.fireCount - 1) : 0;
+                    const startAngle = -weapon.fireAngle / 2;
+
+                    for (let i = 0; i < weapon.fireCount; i++) {
+                        const angle = startAngle + i * angleStep;
+                        const radian = Phaser.Math.DegToRad(angle);
+                        
+                        const targetX = closestEnemy.x;
+                        const targetY = closestEnemy.y;
+
+                        //let newStartPoint = Phaser.Math.RotateAroundDistance({ x: 0, y: 0 }, this.heroGraphics.x, this.heroGraphics.y, radian, 50);
+                        const weaponSprite = this.add.circle(this.heroGraphics.x, this.heroGraphics.y, 3, weapon.color);
+                        //const weaponSprite = this.add.circle(newStartPoint.x, newStartPoint.y, 3, weapon.color);
+                        this.physics.add.existing(weaponSprite);
+                        weaponSprite.body.setCollideWorldBounds(true);
+                        weaponSprite.damage = weapon.damage;
+                        weaponSprite.criticalChance = weapon.criticalChance;
+                        weaponSprite.criticalRate = weapon.criticalRate;
+                        weaponSprite.color = weapon.color;
+                        weaponSprite.range = weapon.range;
+                        this.weapons.add(weaponSprite);
+
+                        // 발사 각도에 따라 무기의 목표 위치를 설정
+                        let newPoint = Phaser.Math.RotateAroundDistance({ x: targetX, y: targetY }, this.heroGraphics.x, this.heroGraphics.y, radian, weapon.range);
+
+                        this.physics.moveTo(weaponSprite, newPoint.x, newPoint.y, weapon.weaponSpeed);
+                        //this.physics.moveTo(weaponSprite, targetX, targetY, weapon.weaponSpeed);
+                    }
                     weapon.time = time;
                 }
             }
         });
     }
+
 
     handleWeaponEnemyCollision(weapon, enemy) {
         const isCritical = Math.random() < weapon.criticalChance;
@@ -166,7 +211,6 @@ export class MainScene extends Phaser.Scene {
         enemy.hpText.setText(roundedHp.toString());
 
         if (enemy.hp <= 0) {
-            //console.log("enemy.dropRate: ", enemy.dropRate)
             if (Math.random() < enemy.dropRate) {
                 this.cardEvent.triggerUpgradeCardSelection();
             }
@@ -244,15 +288,14 @@ export class MainScene extends Phaser.Scene {
                 });
             }
 
-            //const enemyType = Phaser.Math.Between(0, 2) === 0 ? 'small' : (Phaser.Math.Between(0, 1) === 0 ? 'medium' : 'large');
             const randomValue = Phaser.Math.Between(1, 100); // 1부터 100까지의 무작위 숫자 생성
             let enemyType;
             if (randomValue <= 80) {
-                enemyType = 'small'; // 1부터 50까지: 50%
+                enemyType = 'small'; // 1부터 80까지: 80%
             } else if (randomValue <= 95) {
-                enemyType = 'medium'; // 51부터 80까지: 30%
+                enemyType = 'medium'; // 81부터 95까지: 15%
             } else {
-                enemyType = 'large'; // 81부터 100까지: 20%
+                enemyType = 'large'; // 96부터 100까지: 5%
             }
             const enemy = new Enemy(enemyX, enemyY, enemyType);
             const enemyGraphics = this.add.circle(enemy.x, enemy.y, enemy.size, enemy.color);
@@ -268,6 +311,7 @@ export class MainScene extends Phaser.Scene {
             enemyGraphics.dropRate = enemy.dropRate;
             enemyGraphics.speed = enemy.speed;
             enemyGraphics.body.mass = enemy.mass;
+            enemyGraphics.body.setCollideWorldBounds(true);
             this.enemies.add(enemyGraphics);
         }
 
@@ -285,22 +329,18 @@ export class MainScene extends Phaser.Scene {
         let enemySpawnCnt = 2 + elapsedTime / 10;
         if (elapsedTime > this.lastEnemySpawnTime + 5) {
             this.createNewEnemy(enemySpawnCnt);
-            //console.log("* 1: ", enemySpawnCnt);
             let i = Math.random() + (minutes / 20);
             if (i >= 0.7 && i < 0.99) {
                 this.createNewEnemy(enemySpawnCnt * 2);
-                //console.log("* 2: ", enemySpawnCnt * 2);
             } else if (i >= 0.99) {
                 this.createNewEnemy(enemySpawnCnt * 3);
-                //console.log("* 3: ", enemySpawnCnt * 3);
             }
             this.lastEnemySpawnTime = elapsedTime;
         }
     }
 
     updateUpgradeCard(elapsedTime) {
-        // 지수 함수를 사용하여 호출 간격을 조정
-        let interval = Math.exp(elapsedTime / 120) * 8; 
+        let interval = Math.exp(elapsedTime / 120) * 8;
 
         if (elapsedTime > this.lastUpgradeCardTime + interval) {
             this.cardEvent.triggerUpgradeCardSelection();
