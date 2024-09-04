@@ -164,22 +164,25 @@ export class MainScene extends Phaser.Scene {
                 if (closestEnemy) {
                     const angleStep = weapon.fireCount > 1 ? weapon.fireAngle / (weapon.fireCount - 1) : Math.random() * weapon.fireAngle;
                     const startAngle = weapon.fireCount > 1 ? -weapon.fireAngle / 2: angleStep;
-                    const step = weapon.fireCount > 1 ? this.heroGraphics.height / (weapon.fireCount - 1) : 0;
-                    const startstep = weapon.fireCount > 1 ? -this.heroGraphics.height / 2: 0;
+                    const step = weapon.fireCount > 1 ? this.heroGraphics.height * weapon.fireCount / 2 / (weapon.fireCount - 1) : 0;
+                    const startstep = weapon.fireCount > 1 ? -this.heroGraphics.height * weapon.fireCount / 4: 0;
+                    //console.log(weapon.name, step, startstep);
 
                     for (let i = 0; i < weapon.fireCount; i++) {
                         const angle = startAngle + i * angleStep;
                         const radian = Phaser.Math.DegToRad(angle);
                         const angleHtoE = Phaser.Math.Angle.Between(this.heroGraphics.x, this.heroGraphics.y, closestEnemy.x, closestEnemy.y);
-                        
+                        //console.log(weapon.name, i, angle);
                         // const targetX = closestEnemy.x;
                         // const targetY = closestEnemy.y;
                         const targetX = this.heroGraphics.x + Math.cos(angleHtoE) * 3000;
                         const targetY = this.heroGraphics.y + Math.sin(angleHtoE) * 3000;
-                        console.log(closestEnemy.x, targetX);
-                        console.log(closestEnemy.y, targetY);
+                        const firePositionY = this.heroGraphics.y + (startstep + i * step);
                         
-                        let newStartPoint = Phaser.Math.RotateAroundDistance({ x: this.heroGraphics.x, y: this.heroGraphics.y + (startstep + i * step) }, this.heroGraphics.x, this.heroGraphics.y, angleHtoE, 5);
+                        let newStartPoint = Phaser.Math.RotateAroundDistance({ x: this.heroGraphics.x, y: firePositionY }, this.heroGraphics.x, this.heroGraphics.y, angleHtoE, 5);
+                        // console.log(weapon.name, i, this.heroGraphics.y + (startstep + i * step));
+                        // console.log("-", weapon.name, i, newStartPoint.y);
+                        // console.log("**", this.heroGraphics.y-firePositionY);
 
                         //let newStartPoint = Phaser.Math.RotateAroundDistance({ x: 0, y: 0 }, this.heroGraphics.x, this.heroGraphics.y, radian, 50);
                         //const weaponSprite = this.add.circle(this.heroGraphics.x, this.heroGraphics.y, 3, weapon.color);

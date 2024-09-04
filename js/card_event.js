@@ -7,7 +7,7 @@ export class CardEvent {
             { name: '데미지 증가', text: '무기 데미지 20% 증가', effect: 'increaseDamage' },
             { name: '공속 증가', text: '무기 공속 20% 증가', effect: 'increaseFireRate' },
             { name: '크리확률 증가', text: '크리확률 20% 증가', effect: 'increaseCriticalChance' },
-            { name: '속도 증가', text: '무기 속도 20% 증가', effect: 'increaseWeaponSpeed' },
+            { name: '발사체 증가', text: '발사체 +1 ', effect: 'increaseFireCount' },
             { name: '크리배율 증가', text: '크리배율 20% 증가', effect: 'increaseCriticalRate' }
         ];
         this.selectedCardIndex = 0;
@@ -211,8 +211,8 @@ export class CardEvent {
                 case 'increaseCriticalChance':
                     this.scene.hero.weapons.forEach(weapon => weapon.criticalChance *= 1.2);
                     break;
-                case 'increaseSpeed':
-                    this.scene.hero.speed *= 1.2;
+                case 'increaseFireCount':
+                    this.scene.hero.weapons.forEach(weapon => weapon.fireCount += 1);
                     break;
                 case 'increaseCriticalRate':
                     this.scene.hero.weapons.forEach(weapon => weapon.criticalRate *= 1.2);
