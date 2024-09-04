@@ -162,8 +162,8 @@ export class MainScene extends Phaser.Scene {
             if (time > weapon.time + weapon.fireRate) {
                 const closestEnemy = this.util.getClosestEnemy(this.enemies, this.heroGraphics);
                 if (closestEnemy) {
-                    const angleStep = weapon.fireCount > 1 ? weapon.fireAngle / (weapon.fireCount - 1) : 0;
-                    const startAngle = -weapon.fireAngle / 2;
+                    const angleStep = weapon.fireCount > 1 ? weapon.fireAngle / (weapon.fireCount - 1) : Math.random() * weapon.fireAngle;
+                    const startAngle = weapon.fireCount > 1 ? -weapon.fireAngle / 2: angleStep;
 
                     for (let i = 0; i < weapon.fireCount; i++) {
                         const angle = startAngle + i * angleStep;
